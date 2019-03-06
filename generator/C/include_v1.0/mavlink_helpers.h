@@ -66,10 +66,10 @@ MAVLINK_HELPER void mavlink_reset_channel_status(uint8_t chan)
  */
 #if MAVLINK_CRC_EXTRA
 MAVLINK_HELPER uint16_t mavlink_finalize_message_chan(mavlink_message_t* msg, uint8_t system_id, uint8_t component_id, 
-						      uint8_t chan, uint8_t min_length, uint8_t length, uint8_t crc_extra)
+						      uint8_t groupid, uint8_t chan, uint8_t min_length, uint8_t length, uint8_t crc_extra)
 #else
 MAVLINK_HELPER uint16_t mavlink_finalize_message_chan(mavlink_message_t* msg, uint8_t system_id, uint8_t component_id, 
-						      uint8_t chan, uint8_t length)
+						      uint8_t groupid, uint8_t chan, uint8_t length)
 #endif
 {
 	// This is only used for the v2 protocol and we silence it here
@@ -79,6 +79,7 @@ MAVLINK_HELPER uint16_t mavlink_finalize_message_chan(mavlink_message_t* msg, ui
 	msg->len = length;
 	msg->sysid = system_id;
 	msg->compid = component_id;
+	msg->groupid = groupid;
 	// One sequence number per channel
 	msg->seq = mavlink_get_channel_status(chan)->current_tx_seq;
 	mavlink_get_channel_status(chan)->current_tx_seq = mavlink_get_channel_status(chan)->current_tx_seq+1;
@@ -99,15 +100,15 @@ MAVLINK_HELPER uint16_t mavlink_finalize_message_chan(mavlink_message_t* msg, ui
  */
 #if MAVLINK_CRC_EXTRA
 MAVLINK_HELPER uint16_t mavlink_finalize_message(mavlink_message_t* msg, uint8_t system_id, uint8_t component_id, 
-						 uint8_t min_length, uint8_t length, uint8_t crc_extra)
+						 uint8_t groupid, uint8_t min_length, uint8_t length, uint8_t crc_extra)
 {
-    return mavlink_finalize_message_chan(msg, system_id, component_id, MAVLINK_COMM_0, min_length, length, crc_extra);
+    return mavlink_finalize_message_chan(msg, system_id, component_id, groupid, MAVLINK_COMM_0, min_length, length, crc_extra);
 }
 #else
 MAVLINK_HELPER uint16_t mavlink_finalize_message(mavlink_message_t* msg, uint8_t system_id, uint8_t component_id, 
-						 uint8_t length)
+						 uint8_t groupid, uint8_t length)
 {
-	return mavlink_finalize_message_chan(msg, system_id, component_id, MAVLINK_COMM_0, length);
+	return mavlink_finalize_message_chan(msg, system_id, component_id, groupid, MAVLINK_COMM_0, length);
 }
 #endif
 
@@ -133,7 +134,8 @@ MAVLINK_HELPER void _mav_finalize_message_chan_send(mavlink_channel_t chan, uint
 	buf[2] = status->current_tx_seq;
 	buf[3] = mavlink_system.sysid;
 	buf[4] = mavlink_system.compid;
-	buf[5] = msgid;
+	buf[5] = mavlink_system.groupid;
+	buf[6] = msgid;
 	status->current_tx_seq++;
 	checksum = crc_calculate((const uint8_t*)&buf[1], MAVLINK_CORE_HEADER_LEN);
 	crc_accumulate_buffer(&checksum, packet, length);
@@ -329,6 +331,12 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 		break;
 
 	case MAVLINK_PARSE_STATE_GOT_COMPID:
+		rxmsg->groupid = c;
+		mavlink_update_checksum(rxmsg, c);
+		status->parse_state = MAVLINK_PARSE_STATE_GOT_GROUPID;
+		break;
+
+	case MAVLINK_PARSE_STATE_GOT_GROUPID:
 #ifdef MAVLINK_CHECK_MESSAGE_LENGTH
 	        if (rxmsg->len != MAVLINK_MESSAGE_LENGTH(c))
 		{
