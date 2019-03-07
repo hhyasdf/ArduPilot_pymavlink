@@ -215,13 +215,14 @@ ${{array_fields:#define MAVLINK_MSG_${msg_name}_FIELD_${name_upper}_LEN ${array_
  * @brief Pack a ${name_lower} message
  * @param system_id ID of this system
  * @param component_id ID of this component (e.g. 200 for IMU)
+ * @param group_id ID of this system
  * @param msg The MAVLink message to compress the data into
  *
 ${{arg_fields: * @param ${name} ${units} ${description}
 }}
  * @return length of the message in bytes (excluding serial stream start sign)
  */
-static inline uint16_t mavlink_msg_${name_lower}_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+static inline uint16_t mavlink_msg_${name_lower}_pack(uint8_t system_id, uint8_t component_id, uint8_t group_id, mavlink_message_t* msg,
                               ${{arg_fields: ${array_const}${type} ${array_prefix}${name},}})
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
@@ -241,20 +242,21 @@ ${{array_fields:    mav_array_memcpy(packet.${name}, ${name}, sizeof(${type})*${
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_${name};
-    return mavlink_finalize_message(msg, system_id, component_id, MAVLINK_MSG_ID_${name}_MIN_LEN, MAVLINK_MSG_ID_${name}_LEN, MAVLINK_MSG_ID_${name}_CRC);
+    return mavlink_finalize_message(msg, system_id, component_id, group_id, MAVLINK_MSG_ID_${name}_MIN_LEN, MAVLINK_MSG_ID_${name}_LEN, MAVLINK_MSG_ID_${name}_CRC);
 }
 
 /**
  * @brief Pack a ${name_lower} message on a channel
  * @param system_id ID of this system
  * @param component_id ID of this component (e.g. 200 for IMU)
+ * @param group_id ID of this system
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
 ${{arg_fields: * @param ${name} ${units} ${description}
 }}
  * @return length of the message in bytes (excluding serial stream start sign)
  */
-static inline uint16_t mavlink_msg_${name_lower}_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
+static inline uint16_t mavlink_msg_${name_lower}_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t group_id, uint8_t chan,
                                mavlink_message_t* msg,
                                    ${{arg_fields:${array_const}${type} ${array_prefix}${name},}})
 {
@@ -275,7 +277,7 @@ ${{array_fields:    mav_array_memcpy(packet.${name}, ${name}, sizeof(${type})*${
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_${name};
-    return mavlink_finalize_message_chan(msg, system_id, component_id, chan, MAVLINK_MSG_ID_${name}_MIN_LEN, MAVLINK_MSG_ID_${name}_LEN, MAVLINK_MSG_ID_${name}_CRC);
+    return mavlink_finalize_message_chan(msg, system_id, component_id, group_id, chan, MAVLINK_MSG_ID_${name}_MIN_LEN, MAVLINK_MSG_ID_${name}_LEN, MAVLINK_MSG_ID_${name}_CRC);
 }
 
 /**
@@ -283,12 +285,13 @@ ${{array_fields:    mav_array_memcpy(packet.${name}, ${name}, sizeof(${type})*${
  *
  * @param system_id ID of this system
  * @param component_id ID of this component (e.g. 200 for IMU)
+ * @param group_id ID of this system
  * @param msg The MAVLink message to compress the data into
  * @param ${name_lower} C-struct to read the message contents from
  */
-static inline uint16_t mavlink_msg_${name_lower}_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_${name_lower}_t* ${name_lower})
+static inline uint16_t mavlink_msg_${name_lower}_encode(uint8_t system_id, uint8_t component_id, uint8_t group_id, mavlink_message_t* msg, const mavlink_${name_lower}_t* ${name_lower})
 {
-    return mavlink_msg_${name_lower}_pack(system_id, component_id, msg,${{arg_fields: ${name_lower}->${name},}});
+    return mavlink_msg_${name_lower}_pack(system_id, component_id, group_id, msg,${{arg_fields: ${name_lower}->${name},}});
 }
 
 /**
@@ -296,13 +299,14 @@ static inline uint16_t mavlink_msg_${name_lower}_encode(uint8_t system_id, uint8
  *
  * @param system_id ID of this system
  * @param component_id ID of this component (e.g. 200 for IMU)
+ * @param group_id ID of this system
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
  * @param ${name_lower} C-struct to read the message contents from
  */
-static inline uint16_t mavlink_msg_${name_lower}_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_${name_lower}_t* ${name_lower})
+static inline uint16_t mavlink_msg_${name_lower}_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t group_id, uint8_t chan, mavlink_message_t* msg, const mavlink_${name_lower}_t* ${name_lower})
 {
-    return mavlink_msg_${name_lower}_pack_chan(system_id, component_id, chan, msg,${{arg_fields: ${name_lower}->${name},}});
+    return mavlink_msg_${name_lower}_pack_chan(system_id, component_id, group_id, chan, msg,${{arg_fields: ${name_lower}->${name},}});
 }
 
 /**
@@ -434,11 +438,11 @@ ${{include_list:static void mavlink_test_${base}(uint8_t, uint8_t, mavlink_messa
 }}
 static void mavlink_test_${basename}(uint8_t, uint8_t, mavlink_message_t *last_msg);
 
-static void mavlink_test_all(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
+static void mavlink_test_all(uint8_t system_id, uint8_t component_id, uint8_t group_id, mavlink_message_t *last_msg)
 {
-${{include_list:    mavlink_test_${base}(system_id, component_id, last_msg);
+${{include_list:    mavlink_test_${base}(system_id, component_id, group_id, last_msg);
 }}
-    mavlink_test_${basename}(system_id, component_id, last_msg);
+    mavlink_test_${basename}(system_id, component_id, group_id, last_msg);
 }
 #endif
 
@@ -446,7 +450,7 @@ ${{include_list:#include "../${base}/testsuite.h"
 }}
 
 ${{message:
-static void mavlink_test_${name_lower}(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
+static void mavlink_test_${name_lower}(uint8_t system_id, uint8_t component_id, uint8_t group_id, mavlink_message_t *last_msg)
 {
 #ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
     mavlink_status_t *status = mavlink_get_channel_status(MAVLINK_COMM_0);
@@ -473,17 +477,17 @@ static void mavlink_test_${name_lower}(uint8_t system_id, uint8_t component_id, 
         }
 #endif
         memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_${name_lower}_encode(system_id, component_id, &msg, &packet1);
+    mavlink_msg_${name_lower}_encode(system_id, component_id, group_id, &msg, &packet1);
     mavlink_msg_${name_lower}_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
         memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_${name_lower}_pack(system_id, component_id, &msg ${{arg_fields:, packet1.${name} }});
+    mavlink_msg_${name_lower}_pack(system_id, component_id, group_id, &msg ${{arg_fields:, packet1.${name} }});
     mavlink_msg_${name_lower}_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
         memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_${name_lower}_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg ${{arg_fields:, packet1.${name} }});
+    mavlink_msg_${name_lower}_pack_chan(system_id, component_id, group_id, MAVLINK_COMM_0, &msg ${{arg_fields:, packet1.${name} }});
     mavlink_msg_${name_lower}_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
@@ -502,9 +506,9 @@ static void mavlink_test_${name_lower}(uint8_t system_id, uint8_t component_id, 
 }
 }}
 
-static void mavlink_test_${basename}(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
+static void mavlink_test_${basename}(uint8_t system_id, uint8_t component_id, uint8_t group_id, mavlink_message_t *last_msg)
 {
-${{message:    mavlink_test_${name_lower}(system_id, component_id, last_msg);
+${{message:    mavlink_test_${name_lower}(system_id, component_id, group_id, last_msg);
 }}
 }
 
